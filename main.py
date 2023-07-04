@@ -1,13 +1,6 @@
 # This data is from stackoverflow annual developer survery from 2022. This is a survey that the user in stackoverflow submit by their own knowledge of coding, 
 # years of exprience, and their pay roll.
 
-# Guiding questions:
-# 1. Which companies pay the most salaries
-# 2. How much does remote work means for employees
-# 3. How does coding experience affect the level of pay 
-# 4. What is the most popular method learning to code
-# 5. Is getting a master's degree to get a job as a developer easily?
-
 import pandas as pd
 
 df = pd.read_csv(r"C:\Users\simcy\OneDrive\Desktop\stackoverflow_analysis\survey_results_public.csv")
