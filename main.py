@@ -1,35 +1,17 @@
-# This data is from stackoverflow annual developer survery from 2022. This is a survey that the user in stackoverflow submit by their own knowledge of coding, 
-# years of exprience, and their pay roll.
+# Annual Stackoverflow Devloper Survey 2022
+# Guiding question:
+# 1. What is the demographic distribution of the survey respondents?
+# 2. What are the most used programming languages among developers?
+# 3. What are the most common job titles and roles among the respondents?
+# 4. What are the most desired languages by developer? 
+# 5. What is the salary trends among the developers based on their experience? 
 
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 
-df = pd.read_csv(r"C:\Users\simcy\OneDrive\Desktop\stackoverflow_analysis\survey_results_public.csv")
+df = pd.read_csv(r"C:\Users\simcy\OneDrive\Desktop\new_stackoverflow_2022\stack-overflow-developer-survey-2022\survey_results_public.csv")
 
-# Look for the header 
-# df.header = (df.info())
-
-# Filter & clean the data
-selected_df = df[["ResponseId", "MainBranch", "Employment", "RemoteWork", "Age", "YearsCode", "YearsCodePro", "EdLevel", "LearnCode", "LearnCodeOnline", "LearnCodeCoursesCert", "LanguageHaveWorkedWith", "LanguageWantToWorkWith", "OrgSize", "Country", "Currency", "CompFreq", "CompTotal"]]
-selected_df = selected_df.dropna()
-selected_df = selected_df.drop_duplicates(subset="ResponseId")
-
-# 1. Highest yearly compensation in USD sorted by company and country
-paid_df = selected_df[["OrgSize", "Currency" , "Country", "CompFreq", "CompTotal"]]
-#  Convert the Orgsize cell value to company size 
-business_size = {
-    "Just me - I am a freelancer, sole proprietor, etc." : "Freelancer",
-    "2 to 9 employees" : "Micro Business" ,
-    "10 to 19 employees" : "Small Business" ,
-    "20 to 99 employees" : "Small-Medium Business" ,
-    "100 to 499 employees" : "Medium-Sized Business" ,
-    "500 to 999 employees" :  "Large Business",
-    "1,000 to 4,999 employees" : "Large Enterprise" ,
-    "5,000 to 9,999 employees" : "Major Corporation" ,
-    "10,000 or more employees" : "Mega Corporation" 
-}
-
-paid_df["OrgSize"] = paid_df["OrgSize"].replace(business_size)
-# Format some country name (Optional)
 country_name = {
     "Iran, Islamic Republic of..." : "Iran",
     "Congo, Republic of the..." : "Congo",
@@ -43,98 +25,140 @@ country_name = {
     "Republic of Korea" : "South Korea"
 }
 
-paid_df["Country"] = paid_df["Country"].replace(country_name)
-#  Extract the currency abbreviation from the "Currency" column
-paid_df ["Currency"] = paid_df["Currency"].str.split().str[0]
-#  Remove row contains the cell value of "I don't know"
-paid_df = paid_df[paid_df["OrgSize"] != "I don’t know"]
-#  Find the most paid company by each country in USD
-usd_df = paid_df[paid_df["Currency"] == "USD"]
-#Convert all usd comp frequency into yearly freq
-# frequency = {
-#     "Weekly": 52,
-#     "Monthly": 12,
-#     "Yearly": 1
-# }
-# usd_df["AnnualComp"] = usd_df.apply(lambda row: row["CompTotal"] * frequency[row["CompFreq"]], axis=1)
-#  Take only yearly CompFreq
-annual_usd_df = usd_df[usd_df["CompFreq"] == "Yearly"]
-highest_paid_companies_by_usd = annual_usd_df.sort_values(by="CompTotal", ascending=False)
-# highest_paid_companies_by_usd.to_csv("max_annual_comp_in_usd.csv", index=False)
-## We have found out a Mega Corporation in America with 10,000 or more than 10,000 employees offered the highest annual compensation in USD.
+new_branch = {
+    "I am a developer by profession": "Profession Developer",
+    "I am learning to code": "Learn to code",
+    "I am not primarily a developer, but I write code sometimes as part of my work": "Citizen Developer",
+    "I code primarily as a hobby": "Code for Hobby",
+    "I used to be a developer by profession, but no longer am": "Ex-developer"
+}
 
-# 2. Remote work preferences sorted out by age group and main branch 
-# Select the data from selected dataframe
-remote_work_df = selected_df[["MainBranch", "RemoteWork", "Age"]]
-# Take out the "None of these" cell value from the dataframe
-remote_work_df = remote_work_df[remote_work_df["MainBranch"] != "None of these"]
-# remote_work_df.to_csv("remote_work_df.csv", index=False)
-#  Remote work preferences and age group 
-count_remote_work_by_age = remote_work_df.groupby(["Age", "RemoteWork"]).size().reset_index(name='Count')
-remote_work_by_age = count_remote_work_by_age.sort_values(by="Count", ascending=False)
-# remote_work_by_age.to_csv("remote_work_by_age.csv", index=False) 
-#  Remote work preferences and main branch
-count_remote_work_by_professions = remote_work_df.groupby(["RemoteWork", "MainBranch"]).size().reset_index(name='Count')
-remote_work_by_professions = count_remote_work_by_professions.sort_values(by="Count", ascending=False)
-# remote_work_by_professions.to_csv("remote_work_by_professions.csv", index=False) 
-#  Find out the count of professions by their age group
-count_age_by_prefession = remote_work_df.groupby(["Age", "MainBranch"]).size().reset_index(name='Count')
-age_by_prefession = count_age_by_prefession.sort_values(by="Count", ascending=False)
-age_by_prefession.to_csv("age_by_prefession.csv", index=False)
-## By these info, we have know that most of the developer by profession are with the age group of 25-34 years old and 
-# they prefered fully remote work.
+#--------------------------- Q1 -------------------------------------#
+q1_columns = ["MainBranch", "Employment", "Gender", "Age", "EdLevel", "YearsCode", "Country"]
+data_q1 = (df[q1_columns])
+data_q1["Country"].replace(country_name, inplace=True)
+data_q1["MainBranch"].replace(new_branch, inplace=True)
+data_q1["EdLevel"].replace("Something else", "Other")
+data_q1["Employment"] = data_q1["Employment"].str.split(";", expand=True)[0]
+data_q1["Gender"] = data_q1["Gender"].str.replace(":", "").str.split(";", expand=True)[0]
+cleaned_q1 = data_q1.dropna().drop_duplicates()
 
-# 3. Did coding experience affect the level of pay (in USD)
-# MainBranch, YearsCodePro, comptotal, currency
-experience_df = selected_df[["MainBranch", "YearsCodePro", "CompFreq", "CompTotal", "Currency"]]
-# Select the developer profession
-filtered_experience_df = experience_df[selected_df["MainBranch"].isin([
-    "I am a developer by profession",
-    "I am not primarily a developer, but I write code sometimes as part of my work"
-])]
-#  Select the yearly paid
-year_experience_df = filtered_experience_df[filtered_experience_df["CompFreq"] == "Yearly"]
-#  Select only the USD currency
-year_experience_df ["Currency"] = year_experience_df["Currency"].str.split().str[0]
-year_experience_df = year_experience_df[year_experience_df ["Currency"] == "USD"]
-# Gouped by their experience of coding
-year_experience_df = year_experience_df.sort_values(by = "CompTotal", ascending=False)
-# year_experience_df.to_csv("experience_df.csv", index=False) 
-# Based on the info, we find out there is a developer by profession is having a 5 years coding experience have the most annual paid (USD 2520000),
-# this developer have more annual paid compare with other developer or non-developer those who have more experience than him.
+# Top 10 country with high respondents 
+top_countries = cleaned_q1["Country"].value_counts().head(10).sort_values(ascending=False)
+plt.bar(top_countries.index, top_countries.values)
+plt.xlabel("Country")
+plt.ylabel("Totol Respondents")
+plt.title("Top 10 Countries with Highest Respondents")
+plt.show()
 
-# 4.1 Most popular method learning to code
-#"LearnCode", "LearnCodeOnline"
-learning_code = selected_df[["LearnCode"]]
-# Split all the learn code options
-learning_code["LearnCode"] = learning_code["LearnCode"].str.replace(r'\([^)]*\)', '').str.split(";")
-# Count each of the learning to code method
-method_count = learning_code["LearnCode"].explode().value_counts().reset_index()
-# Rename the column
-method_count.columns = ["LearnCode", "CountLearnCode"]
-method_count.to_csv("method_count.csv", index=False)
-# We have found out most of the user are using other online resources and go for online courses/ certification to learn code.
+# Respondent Gender Distribution
+gender_counts = cleaned_q1["Gender"].value_counts()
+plt.pie(gender_counts, labels=gender_counts.index, autopct='%1.1f%%')
+plt.title("Respondent Gender Distribution")
+plt.show()
 
-# 4.2 Find out how many person learn code from online sources and what type of online source they are using
-online_learning_code = selected_df[["LearnCodeOnline"]]
-# Split the LearnCodeOnline
-online_learning_code["LearnCodeOnline"] = online_learning_code["LearnCodeOnline"].str.replace(r'\([^)]*\)', '').str.split(";")
-# Count method to find out how the contestant use online resources
-online_sources_count = online_learning_code["LearnCodeOnline"].explode().value_counts().reset_index()
-# Rename the column 
-online_sources_count.columns = ["LearnCodeOnline", "CountLearnCodeOnline"]
-online_sources_count.to_csv("online_sources_count.csv", index=False)
-# Most of the user are using Techinical Documentaion and Stack Overflow 
+# Profession grouped by Age
+profession_by_age = cleaned_q1.groupby(["Age", "MainBranch"]).size().unstack()
+profession_by_age.plot(kind="barh", stacked=True, figsize=(12, 8))
+plt.ylabel("Age")
+plt.title("Professions Grouped by Age")
+plt.legend(title="Profession", bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.gca().invert_yaxis() 
+plt.show()
 
-# 5. Master Degree Vs Other study or degree sorted by developer position
-# "MainBranch" "EdLevel" "Employment"
-degree_job_df = selected_df[["MainBranch", "EdLevel"]]
-# Select developer profession
-degree_job_df = degree_job_df[degree_job_df["MainBranch"] == "I am a developer by profession"]
-# Use count to calculate the total amount of developer by thier education level
-count_degree_df = degree_job_df["EdLevel"].explode().value_counts().reset_index()
-# Rename the column 
-count_degree_df.columns = ["EduLevel", "CountDeveloper"]
-count_degree_df.to_csv("degree_vs_dev.csv", index=False)
-# As the result, we can see that developer which hold a Bachelor’s degree are more than those who were holding a Master’s degree (5276 Vs 2584).
-# We can assume that holding a Master's degree doesn't mean easier to get a job.
+#--------------------------- Q2 -------------------------------------#
+q2_columns = ["LanguageHaveWorkedWith", "LanguageWantToWorkWith"]
+data_q2 = (df[q2_columns])
+data_q2.rename(columns={"LanguageHaveWorkedWith": "MostUsedLangauges", "LanguageWantToWorkWith": "PreferredLanguage"}, inplace=True)
+clean_q2 = data_q2.drop_duplicates().dropna()
+
+# Most Used Langauges
+clean_q2["MostUsedLangauges"] = clean_q2["MostUsedLangauges"].str.split(";")
+most_used_langauges = clean_q2.explode("MostUsedLangauges")["MostUsedLangauges"].value_counts()
+
+# Preferred Languages 
+clean_q2["PreferredLanguage"] = clean_q2["PreferredLanguage"].str.split(";")
+preferred_languages = clean_q2.explode("PreferredLanguage")["PreferredLanguage"].value_counts()
+
+# Most Used Langauges Vs Preferred Languages
+plt.figure(figsize=(10, 6))
+plt.barh(most_used_langauges.index, most_used_langauges.values, label="Most Used Languages")
+plt.barh(preferred_languages.index, preferred_languages.values, label="Preferred Languages")
+plt.title("Most Used Languages Vs Preferred Languages")
+plt.legend()
+plt.gca().invert_yaxis()
+plt.show()
+
+#--------------------------- Q3 -------------------------------------#
+q3_columns = ["DevType"]
+data_q3 = (df[q3_columns])
+data_q3 = data_q3["DevType"].str.get_dummies(sep=";")
+cleaned_q3 = data_q3.drop_duplicates().dropna()
+
+# Top 10 Developer Distribution
+role_counts = cleaned_q3.sum().sort_values(ascending=False).head(10)
+plt.barh(role_counts.index, role_counts.values)
+plt.ylabel("Roles")
+plt.gca().invert_yaxis() 
+plt.show()
+
+#--------------------------- Q4 -------------------------------------#
+q4_columns = ["LanguageWantToWorkWith", "DatabaseWantToWorkWith", "WebframeWantToWorkWith", "MiscTechWantToWorkWith"]
+data_q4 = (df[q4_columns])
+for column in q4_columns:
+    data_q4[column] = data_q4[column].str.split(";")
+
+tech_counts = pd.Series(dtype=int)
+for column in q4_columns:
+    tech_counts = tech_counts.add(data_q4[column].explode().value_counts(), fill_value=0)
+
+# Top 10 Popular Languages 
+top_n = 10
+top_tech = tech_counts.sort_values(ascending=False).astype(int).head(10)
+plt.figure(figsize=(10,6))
+plt.bar(top_tech.index, top_tech.values)
+plt.xlabel("Programming Languages")
+plt.title("Top 10 Popular Languages")
+plt.xticks(rotation=45)
+plt.show()
+
+#--------------------------- Q5 -------------------------------------#
+q5_columns = ["YearsCode", "Currency", "DevType", "CompTotal", "CompFreq", "ConvertedCompYearly"]
+data_q5 = df[q5_columns]
+data_q5["Currency"] = data_q5["Currency"].str.split("\t").str[0]
+data_q5["DevType"] = data_q5["DevType"].str.split(";").str[0]
+
+def converted_comp(row):
+    if row["Currency"] != "USD" and row["CompFreq"] != "Yearly":
+        return row["ConvertedCompYearly"]
+    return row["CompTotal"]    
+data_q5["CompYearlyUSD"] = data_q5.apply(converted_comp, axis=1)
+cleaned_q5  = data_q5[["YearsCode", "DevType", "CompYearlyUSD"]].drop_duplicates().dropna()
+
+# Salary and experience by developer type
+def convert_int(exp):
+    if exp == "More than 50 years":
+        return 51
+    elif exp == "Less than 1 year":
+        return 0
+    else:
+        return(int(exp))
+cleaned_q5["YearsCode"] = cleaned_q5["YearsCode"].apply(convert_int)  
+cleaned_q5 = cleaned_q5[cleaned_q5["DevType"] != "Student"] 
+average_exp = cleaned_q5.groupby("DevType")["YearsCode"].mean().round(1).reset_index()
+median_comp = cleaned_q5.groupby("DevType")["CompYearlyUSD"].median().reset_index()
+avg_exp_med_comp = pd.merge(average_exp, median_comp, on="DevType")
+
+y = avg_exp_med_comp["YearsCode"]
+x = avg_exp_med_comp["CompYearlyUSD"]
+develepor_role = avg_exp_med_comp["DevType"]
+plt.figure(figsize=(10,6))
+plt.scatter(x, y, alpha=0.5)
+for i, develepor_role in enumerate(develepor_role):
+    plt.text(x[i], y[i], develepor_role, fontsize=7, ha="center", va="bottom", alpha=0.7)
+
+plt.ylabel("Average Experience")
+plt.xlabel("Annual Median Salary USD")
+plt.title("Average Experience Vs Salary with Developer Roles")
+plt.grid(True)
+plt.show()
