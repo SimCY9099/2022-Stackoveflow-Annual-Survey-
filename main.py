@@ -34,7 +34,7 @@ new_branch = {
 }
 
 #--------------------------- Q1 -------------------------------------#
-q1_columns = ["MainBranch", "Employment", "Gender", "Age", "EdLevel", "YearsCode", "Country"]
+q1_columns = ["ResponseId", "MainBranch", "Employment", "Gender", "Age", "EdLevel", "YearsCode", "Country"]
 data_q1 = (df[q1_columns])
 data_q1["Country"].replace(country_name, inplace=True)
 data_q1["MainBranch"].replace(new_branch, inplace=True)
@@ -42,10 +42,14 @@ data_q1["EdLevel"].replace("Something else", "Other")
 data_q1["Employment"] = data_q1["Employment"].str.split(";", expand=True)[0]
 data_q1["Gender"] = data_q1["Gender"].str.replace(":", "").str.split(";", expand=True)[0]
 cleaned_q1 = data_q1.dropna().drop_duplicates()
+total_respondents = int(cleaned_q1.shape[0])
 
 # Top 10 country with high respondents 
+country_percentages = (cleaned_q1["Country"].value_counts() / total_respondents) *100
 top_countries = cleaned_q1["Country"].value_counts().head(10).sort_values(ascending=False)
 plt.bar(top_countries.index, top_countries.values)
+for index, value in enumerate(top_countries):
+    plt.text(index, value + 50, f"{country_percentages[top_countries.index[index]]:.1f}%", ha='center', va='bottom', fontsize=9, color='blue')
 plt.xlabel("Country")
 plt.ylabel("Totol Respondents")
 plt.title("Top 10 Countries with Highest Respondents")
@@ -55,6 +59,12 @@ plt.show()
 gender_counts = cleaned_q1["Gender"].value_counts()
 plt.pie(gender_counts, labels=gender_counts.index, autopct='%1.1f%%')
 plt.title("Respondent Gender Distribution")
+plt.show()
+
+# Gender Distribution with Profession Developer
+pro_gender_counts = cleaned_q1[cleaned_q1["MainBranch"] == "Profession Developer"]["Gender"].value_counts()
+plt.pie(pro_gender_counts, labels=pro_gender_counts.index, autopct='%1.1f%%')
+plt.title("Profession Developer Gender Distribution")
 plt.show()
 
 # Profession grouped by Age
@@ -67,7 +77,7 @@ plt.gca().invert_yaxis()
 plt.show()
 
 #--------------------------- Q2 -------------------------------------#
-q2_columns = ["LanguageHaveWorkedWith", "LanguageWantToWorkWith"]
+q2_columns = ["ResponseId", "LanguageHaveWorkedWith", "LanguageWantToWorkWith"]
 data_q2 = (df[q2_columns])
 data_q2.rename(columns={"LanguageHaveWorkedWith": "MostUsedLangauges", "LanguageWantToWorkWith": "PreferredLanguage"}, inplace=True)
 clean_q2 = data_q2.drop_duplicates().dropna()
@@ -90,40 +100,57 @@ plt.gca().invert_yaxis()
 plt.show()
 
 #--------------------------- Q3 -------------------------------------#
-q3_columns = ["DevType"]
+q3_columns = ["ResponseId", "DevType"]
 data_q3 = (df[q3_columns])
 data_q3 = data_q3["DevType"].str.get_dummies(sep=";")
 cleaned_q3 = data_q3.drop_duplicates().dropna()
+total_respondents = int(cleaned_q3.shape[0])
 
 # Top 10 Developer Distribution
 role_counts = cleaned_q3.sum().sort_values(ascending=False).head(10)
+role_percentages = (role_counts / total_respondents) * 100
 plt.barh(role_counts.index, role_counts.values)
+for index, value in enumerate(role_counts):
+    plt.text(value, index, f"{role_percentages[role_counts.index[index]]:.1f}%", ha='left', va='center', fontsize=9, color='blue')
+plt.xlabel("Number of Respondents")
 plt.ylabel("Roles")
-plt.gca().invert_yaxis() 
+plt.gca().invert_yaxis()
+plt.title("Top 10 Developer Roles Distribution")
 plt.show()
 
 #--------------------------- Q4 -------------------------------------#
 q4_columns = ["LanguageWantToWorkWith", "DatabaseWantToWorkWith", "WebframeWantToWorkWith", "MiscTechWantToWorkWith"]
-data_q4 = (df[q4_columns])
+data_q4 = df[q4_columns].copy()
+
 for column in q4_columns:
     data_q4[column] = data_q4[column].str.split(";")
 
-tech_counts = pd.Series(dtype=int)
+languages_counts = pd.Series(dtype=int)
 for column in q4_columns:
-    tech_counts = tech_counts.add(data_q4[column].explode().value_counts(), fill_value=0)
+    languages_counts = languages_counts.add(data_q4[column].explode().value_counts(), fill_value=0)
 
-# Top 10 Popular Languages 
+total_respondents = int(df.shape[0])
+
+# Top 10 Popular Languages
 top_n = 10
-top_tech = tech_counts.sort_values(ascending=False).astype(int).head(10)
-plt.figure(figsize=(10,6))
-plt.bar(top_tech.index, top_tech.values)
+top_tech = languages_counts.sort_values(ascending=False).astype(int).head(10)
+languages_percentages = (languages_counts / total_respondents) * 100
+
+plt.figure(figsize=(10, 6))
+bars = plt.bar(top_tech.index, top_tech.values)
+
+for index, value in enumerate(top_tech):
+    percentage = languages_percentages[top_tech.index[index]]
+    plt.text(index, value, f"{percentage:.1f}%", ha='center', va='bottom', fontsize=9, color='blue')
+
 plt.xlabel("Programming Languages")
+plt.ylabel("Number of Respondents")
 plt.title("Top 10 Popular Languages")
 plt.xticks(rotation=45)
 plt.show()
 
 #--------------------------- Q5 -------------------------------------#
-q5_columns = ["YearsCode", "Currency", "DevType", "CompTotal", "CompFreq", "ConvertedCompYearly"]
+q5_columns = ["ResponseId", "YearsCode", "Currency", "DevType", "CompTotal", "CompFreq", "ConvertedCompYearly"]
 data_q5 = df[q5_columns]
 data_q5["Currency"] = data_q5["Currency"].str.split("\t").str[0]
 data_q5["DevType"] = data_q5["DevType"].str.split(";").str[0]
@@ -149,16 +176,17 @@ average_exp = cleaned_q5.groupby("DevType")["YearsCode"].mean().round(1).reset_i
 median_comp = cleaned_q5.groupby("DevType")["CompYearlyUSD"].median().reset_index()
 avg_exp_med_comp = pd.merge(average_exp, median_comp, on="DevType")
 
-y = avg_exp_med_comp["YearsCode"]
-x = avg_exp_med_comp["CompYearlyUSD"]
-develepor_role = avg_exp_med_comp["DevType"]
-plt.figure(figsize=(10,6))
+y = avg_exp_med_comp["CompYearlyUSD"]
+x = avg_exp_med_comp["YearsCode"]
+developer_role = avg_exp_med_comp["DevType"]
+plt.figure(figsize=(15, 10))
 plt.scatter(x, y, alpha=0.5)
-for i, develepor_role in enumerate(develepor_role):
-    plt.text(x[i], y[i], develepor_role, fontsize=7, ha="center", va="bottom", alpha=0.7)
 
-plt.ylabel("Average Experience")
-plt.xlabel("Annual Median Salary USD")
-plt.title("Average Experience Vs Salary with Developer Roles")
+for i, developer_role in enumerate(developer_role):
+    plt.text(x[i], y[i], developer_role, fontsize=7, ha="center", va="bottom", alpha=0.7)
+
+plt.xlabel("Average Experience")
+plt.ylabel("Annual Median Salary USD")
+plt.title("Annual Median Salary Vs Average Experience with Developer Roles")
 plt.grid(True)
 plt.show()
