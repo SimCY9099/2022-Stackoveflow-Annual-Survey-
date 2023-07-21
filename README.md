@@ -21,7 +21,7 @@
 - United States has the highest number of respondents, followed by India, Germany and the United Kingdom. These four countries account for more than 40% of the total respondents. The other countries in the top 10 are all developed countries with large populations.
 ![Top 10 Country with Highest Respondents](https://github.com/SimCY9099/python_data_cleaning/assets/126155098/fbbc156a-c568-4b88-a271-bea433bc4aa4)
 
-- 92% of the responedent and 93% of professional developer identified themselves as man in this survey.
+- 92% among all the responedent and 93% of professional developer identified themselves as man in this survey.
 ![Gender Distribution ](https://github.com/SimCY9099/python_data_cleaning/assets/126155098/1948c5b2-4921-4b1a-a167-c72a6bc7e58c)
 ![Gender Profession](https://github.com/SimCY9099/python_data_cleaning/assets/126155098/1ec4638d-aafb-4a7a-8891-4e2e98dd4023)
 
